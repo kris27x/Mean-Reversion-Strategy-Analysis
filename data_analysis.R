@@ -4,6 +4,7 @@ library(quantmod)
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(tidyr)
 library(TTR)
 library(PerformanceAnalytics)
 
@@ -163,7 +164,7 @@ rolling_correlation_data <- data.frame(date = index(rolling_correlation), Rollin
 rolling_correlation_data <- na.omit(rolling_correlation_data)
 
 p8 <- ggplot(rolling_correlation_data, aes(x = date, y = Rolling_Correlation)) +
-  geom_line(color = "purple", na.rm = TRUE) +
+  geom_line(color = "purple") +
   labs(title = "Rolling 30-Day Correlation between Dow Jones and Nasdaq Returns", x = "Date", y = "Correlation")
 print(p8)
 ggsave("rolling_correlation_plot.png")
