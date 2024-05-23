@@ -58,7 +58,10 @@ print(nasdaq_returns_stats)
 p1 <- ggplot() +
   geom_line(data = djia_data, aes(x = date, y = DJI.Close), color = "blue", na.rm = TRUE) +
   geom_line(data = nasdaq_data, aes(x = date, y = IXIC.Close), color = "red", na.rm = TRUE) +
-  labs(title = "Dow Jones and Nasdaq Closing Prices", x = "Date", y = "Closing Price")
+  labs(title = "Dow Jones and Nasdaq Closing Prices", x = "Date", y = "Closing Price") +
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p1)
 ggsave("closing_prices_plot.png")
 
@@ -68,7 +71,10 @@ nasdaq_returns_daily <- dailyReturn(IXIC)
 p2 <- ggplot() +
   geom_histogram(data = data.frame(djia_returns_daily), aes(x = daily.returns), bins = 100, fill = "blue", alpha = 0.5, na.rm = TRUE) +
   geom_histogram(data = data.frame(nasdaq_returns_daily), aes(x = daily.returns), bins = 100, fill = "red", alpha = 0.5, na.rm = TRUE) +
-  labs(title = "Histogram of Daily Returns", x = "Daily Returns", y = "Frequency")
+  labs(title = "Histogram of Daily Returns", x = "Daily Returns", y = "Frequency") +
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p2)
 ggsave("daily_returns_histogram.png")
 
@@ -84,7 +90,10 @@ nasdaq_annual_returns <- calc_annual_return(nasdaq_data, "IXIC.Open", "IXIC.Clos
 p3 <- ggplot() +
   geom_line(data = djia_annual_returns, aes(x = year, y = AnnualReturn), color = "blue") +
   geom_line(data = nasdaq_annual_returns, aes(x = year, y = AnnualReturn), color = "red") +
-  labs(title = "Annual Returns of Dow Jones and Nasdaq", x = "Year", y = "Annual Return")
+  labs(title = "Annual Returns of Dow Jones and Nasdaq", x = "Year", y = "Annual Return") +
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p3)
 ggsave("annual_returns_plot.png")
 
@@ -101,7 +110,10 @@ nasdaq_monthly_returns <- calc_monthly_return(nasdaq_data, "IXIC.Open", "IXIC.Cl
 p4 <- ggplot() +
   geom_line(data = djia_monthly_returns, aes(x = date, y = MonthlyReturn), color = "blue") +
   geom_line(data = nasdaq_monthly_returns, aes(x = date, y = MonthlyReturn), color = "red") +
-  labs(title = "Monthly Returns of Dow Jones and Nasdaq", x = "Date", y = "Monthly Return")
+  labs(title = "Monthly Returns of Dow Jones and Nasdaq", x = "Date", y = "Monthly Return") +
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p4)
 ggsave("monthly_returns_plot.png")
 
@@ -122,7 +134,10 @@ print(head(volatility_data))
 p5 <- ggplot(volatility_data, aes(x = date)) +
   geom_line(aes(y = DJI_Volatility), color = "blue", na.rm = TRUE) +
   geom_line(aes(y = IXIC_Volatility), color = "red", na.rm = TRUE) +
-  labs(title = "Rolling 30-Day Volatility", x = "Date", y = "Volatility (Annualized)")
+  labs(title = "Rolling 30-Day Volatility", x = "Date", y = "Volatility (Annualized)") +
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p5)
 ggsave("volatility_plot.png")
 
@@ -148,13 +163,19 @@ print(paste("Correlation between Dow Jones and Nasdaq returns: ", correlation))
 p6 <- ggplot(returns_data, aes(x = date)) +
   geom_line(aes(y = DJI_Returns), color = "blue", na.rm = TRUE) +
   geom_line(aes(y = IXIC_Returns), color = "red", na.rm = TRUE) +
-  labs(title = "Daily Returns of Dow Jones and Nasdaq", x = "Date", y = "Daily Returns")
+  labs(title = "Daily Returns of Dow Jones and Nasdaq", x = "Date", y = "Daily Returns") +
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p6)
 ggsave("daily_returns_plot.png")
 
 p7 <- ggplot(returns_data, aes(x = DJI_Returns, y = IXIC_Returns)) +
   geom_point(alpha = 0.5) +
-  labs(title = "Scatter Plot of Daily Returns", x = "DJI Returns", y = "IXIC Returns")
+  labs(title = "Scatter Plot of Daily Returns", x = "DJI Returns", y = "IXIC Returns") +
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p7)
 ggsave("scatter_plot_returns.png")
 
@@ -165,7 +186,10 @@ rolling_correlation_data <- na.omit(rolling_correlation_data)
 
 p8 <- ggplot(rolling_correlation_data, aes(x = date, y = Rolling_Correlation)) +
   geom_line(color = "purple") +
-  labs(title = "Rolling 30-Day Correlation between Dow Jones and Nasdaq Returns", x = "Date", y = "Correlation")
+  labs(title = "Rolling 30-Day Correlation between Dow Jones and Nasdaq Returns", x = "Date", y = "Correlation") +
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p8)
 ggsave("rolling_correlation_plot.png")
 
@@ -189,9 +213,9 @@ p12 <- ggplot(combined_returns_long, aes(x = date, y = Cumulative_Return, color 
                                 "Dow Jones.Cumulative_Intraday_Return" = "purple")) +
   labs(title = "Cumulative Overnight and Intraday Returns for Nasdaq and Dow Jones",
        x = "Date", y = "Cumulative Return", color = "Index and Return Type") +
-  theme_minimal()
-
-# Save the plot
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p12)
 ggsave("cumulative_returns_combined_plot.png", width = 10, height = 6)
 
@@ -215,7 +239,10 @@ p10 <- ggplot(djia_ma, aes(x = date)) +
   geom_line(aes(y = Close), color = "black", na.rm = TRUE) +
   geom_line(aes(y = MA_50), color = "blue", na.rm = TRUE) +
   geom_line(aes(y = MA_200), color = "red", na.rm = TRUE) +
-  labs(title = "Dow Jones with 50 and 200-Day Moving Averages", x = "Date", y = "Price")
+  labs(title = "Dow Jones with 50 and 200-Day Moving Averages", x = "Date", y = "Price") +
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p10)
 ggsave("djia_moving_averages_plot.png")
 
@@ -223,7 +250,10 @@ p11 <- ggplot(nasdaq_ma, aes(x = date)) +
   geom_line(aes(y = Close), color = "black", na.rm = TRUE) +
   geom_line(aes(y = MA_50), color = "blue", na.rm = TRUE) +
   geom_line(aes(y = MA_200), color = "red", na.rm = TRUE) +
-  labs(title = "Nasdaq with 50 and 200-Day Moving Averages", x = "Date", y = "Price")
+  labs(title = "Nasdaq with 50 and 200-Day Moving Averages", x = "Date", y = "Price") +
+  theme_minimal(base_size = 15) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"))
 print(p11)
 ggsave("nasdaq_moving_averages_plot.png")
 
