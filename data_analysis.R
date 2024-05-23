@@ -148,9 +148,6 @@ ggsave("volatility_plot.png")
 # Sector Composition Analysis (Placeholder, data needs to be added)
 # Example: Comparing sector weights if sector data is available
 
-# Risk On/Off Market Sentiment (Placeholder, requires additional data)
-# Example: Using VIX index data for sentiment analysis
-
 # Correlation Analysis
 returns_xts <- merge(dailyReturn(DJI), dailyReturn(IXIC), all = FALSE)
 colnames(returns_xts) <- c("DJI_Returns", "IXIC_Returns")
