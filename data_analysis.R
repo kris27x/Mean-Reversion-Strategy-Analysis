@@ -16,10 +16,9 @@ calculate_returns <- function(data, close_col, open_col) {
       Overnight_Return = (Opening / Closing) - 1,
       Intraday_Return = (.data[[close_col]] / Opening) - 1
     ) %>%
-    filter(!is.na(Overnight_Return) & !is.na(Intraday_Return)) %>%
     mutate(
-      Cumulative_Overnight_Return = cumprod(1 + Overnight_Return),
-      Cumulative_Intraday_Return = cumprod(1 + Intraday_Return)
+      Cumulative_Overnight_Return = cumprod(1 + ifelse(is.na(Overnight_Return), 0, Overnight_Return)),
+      Cumulative_Intraday_Return = cumprod(1 + ifelse(is.na(Intraday_Return), 0, Intraday_Return))
     )
 }
 
@@ -56,8 +55,8 @@ print(nasdaq_returns_stats)
 
 # Plot the closing prices
 p1 <- ggplot() +
-  geom_line(data = djia_data, aes(x = date, y = DJI.Close), color = "blue") +
-  geom_line(data = nasdaq_data, aes(x = date, y = IXIC.Close), color = "red") +
+  geom_line(data = djia_data, aes(x = date, y = DJI.Close), color = "blue", na.rm = TRUE) +
+  geom_line(data = nasdaq_data, aes(x = date, y = IXIC.Close), color = "red", na.rm = TRUE) +
   labs(title = "Dow Jones and Nasdaq Closing Prices", x = "Date", y = "Closing Price")
 print(p1)
 ggsave("closing_prices_plot.png")
@@ -66,8 +65,8 @@ ggsave("closing_prices_plot.png")
 djia_returns_daily <- dailyReturn(DJI)
 nasdaq_returns_daily <- dailyReturn(IXIC)
 p2 <- ggplot() +
-  geom_histogram(data = data.frame(djia_returns_daily), aes(x = daily.returns), bins = 100, fill = "blue", alpha = 0.5) +
-  geom_histogram(data = data.frame(nasdaq_returns_daily), aes(x = daily.returns), bins = 100, fill = "red", alpha = 0.5) +
+  geom_histogram(data = data.frame(djia_returns_daily), aes(x = daily.returns), bins = 100, fill = "blue", alpha = 0.5, na.rm = TRUE) +
+  geom_histogram(data = data.frame(nasdaq_returns_daily), aes(x = daily.returns), bins = 100, fill = "red", alpha = 0.5, na.rm = TRUE) +
   labs(title = "Histogram of Daily Returns", x = "Daily Returns", y = "Frequency")
 print(p2)
 ggsave("daily_returns_histogram.png")
@@ -120,8 +119,8 @@ print("First few rows of volatility data:")
 print(head(volatility_data))
 
 p5 <- ggplot(volatility_data, aes(x = date)) +
-  geom_line(aes(y = DJI_Volatility), color = "blue") +
-  geom_line(aes(y = IXIC_Volatility), color = "red") +
+  geom_line(aes(y = DJI_Volatility), color = "blue", na.rm = TRUE) +
+  geom_line(aes(y = IXIC_Volatility), color = "red", na.rm = TRUE) +
   labs(title = "Rolling 30-Day Volatility", x = "Date", y = "Volatility (Annualized)")
 print(p5)
 ggsave("volatility_plot.png")
@@ -146,8 +145,8 @@ correlation <- cor(returns_data$DJI_Returns, returns_data$IXIC_Returns, use = "c
 print(paste("Correlation between Dow Jones and Nasdaq returns: ", correlation))
 
 p6 <- ggplot(returns_data, aes(x = date)) +
-  geom_line(aes(y = DJI_Returns), color = "blue") +
-  geom_line(aes(y = IXIC_Returns), color = "red") +
+  geom_line(aes(y = DJI_Returns), color = "blue", na.rm = TRUE) +
+  geom_line(aes(y = IXIC_Returns), color = "red", na.rm = TRUE) +
   labs(title = "Daily Returns of Dow Jones and Nasdaq", x = "Date", y = "Daily Returns")
 print(p6)
 ggsave("daily_returns_plot.png")
@@ -164,7 +163,7 @@ rolling_correlation_data <- data.frame(date = index(rolling_correlation), Rollin
 rolling_correlation_data <- na.omit(rolling_correlation_data)
 
 p8 <- ggplot(rolling_correlation_data, aes(x = date, y = Rolling_Correlation)) +
-  geom_line(color = "purple") +
+  geom_line(color = "purple", na.rm = TRUE) +
   labs(title = "Rolling 30-Day Correlation between Dow Jones and Nasdaq Returns", x = "Date", y = "Correlation")
 print(p8)
 ggsave("rolling_correlation_plot.png")
@@ -195,6 +194,13 @@ p12 <- ggplot(combined_returns_long, aes(x = date, y = Cumulative_Return, color 
 print(p12)
 ggsave("cumulative_returns_combined_plot.png", width = 10, height = 6)
 
+# Print cumulative returns
+print("Final Cumulative Returns for Dow Jones:")
+print(djia_returns %>% select(date, Cumulative_Overnight_Return, Cumulative_Intraday_Return) %>% tail(1))
+
+print("Final Cumulative Returns for Nasdaq:")
+print(nasdaq_returns %>% select(date, Cumulative_Overnight_Return, Cumulative_Intraday_Return) %>% tail(1))
+
 # Moving Averages
 djia_ma <- data.frame(date = djia_data$date, Close = djia_data$DJI.Close,
                       MA_50 = SMA(djia_data$DJI.Close, n = 50),
@@ -205,17 +211,17 @@ nasdaq_ma <- data.frame(date = nasdaq_data$date, Close = nasdaq_data$IXIC.Close,
                         MA_200 = SMA(nasdaq_data$IXIC.Close, n = 200))
 
 p10 <- ggplot(djia_ma, aes(x = date)) +
-  geom_line(aes(y = Close), color = "black") +
-  geom_line(aes(y = MA_50), color = "blue") +
-  geom_line(aes(y = MA_200), color = "red") +
+  geom_line(aes(y = Close), color = "black", na.rm = TRUE) +
+  geom_line(aes(y = MA_50), color = "blue", na.rm = TRUE) +
+  geom_line(aes(y = MA_200), color = "red", na.rm = TRUE) +
   labs(title = "Dow Jones with 50 and 200-Day Moving Averages", x = "Date", y = "Price")
 print(p10)
 ggsave("djia_moving_averages_plot.png")
 
 p11 <- ggplot(nasdaq_ma, aes(x = date)) +
-  geom_line(aes(y = Close), color = "black") +
-  geom_line(aes(y = MA_50), color = "blue") +
-  geom_line(aes(y = MA_200), color = "red") +
+  geom_line(aes(y = Close), color = "black", na.rm = TRUE) +
+  geom_line(aes(y = MA_50), color = "blue", na.rm = TRUE) +
+  geom_line(aes(y = MA_200), color = "red", na.rm = TRUE) +
   labs(title = "Nasdaq with 50 and 200-Day Moving Averages", x = "Date", y = "Price")
 print(p11)
 ggsave("nasdaq_moving_averages_plot.png")
