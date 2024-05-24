@@ -8,7 +8,7 @@ if (!requireNamespace("devtools", quietly = TRUE)) {
 # Install packages from CRAN
 install.packages(c("quantmod", "TTR", "PerformanceAnalytics", "xts", "zoo", "dplyr", "ggplot2", "tidyquant", "lubridate", "caret",
                    "data.table", "readr", "httr", "jsonlite", "ROI", "forecast", "nloptr", 
-                   "rmarkdown", "bookdown", "knitr"))
+                   "rmarkdown", "bookdown", "knitr" , "ggcorrplot" , "plotly"))
 
 # Install blotter and quantstrat from GitHub
 devtools::install_github("braverock/blotter")
@@ -37,6 +37,8 @@ library(nloptr)
 library(rmarkdown)
 library(bookdown)
 library(knitr)
+library(ggcorrplot)
+library(plotly)
 
 # Confirmation message
 cat("All packages have been installed and loaded successfully.")

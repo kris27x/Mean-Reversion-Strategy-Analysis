@@ -8,6 +8,8 @@ library(lubridate)
 library(tidyr)
 library(TTR)
 library(PerformanceAnalytics)
+library(reshape2)
+library(ggcorrplot)
 
 # Function to handle missing values
 handle_missing_values <- function(data) {
@@ -40,6 +42,18 @@ get_data <- function(symbol) {
   }, error = function(e) {
     stop(paste("Error downloading data for symbol:", symbol))
   })
+}
+
+# Function to calculate returns for different periods
+calculate_period_returns <- function(data, periods) {
+  returns <- list()
+  for (period in periods) {
+    period_return <- periodReturn(data, period = period, type = 'log')
+    returns[[period]] <- period_return
+  }
+  returns_df <- do.call(merge, returns)
+  colnames(returns_df) <- periods
+  return(returns_df)
 }
 
 # Download historical data
@@ -257,6 +271,38 @@ print(p10)
 print(p11)
 ggsave("djia_moving_averages_plot.png", plot = p10, width = 10, height = 6)
 ggsave("nasdaq_moving_averages_plot.png", plot = p11, width = 10, height = 6)
+
+# Heatmap of Returns Correlations
+# Calculate returns for different periods
+periods <- c("daily", "weekly", "monthly")
+djia_returns_periods <- calculate_period_returns(djia_data, periods)
+nasdaq_returns_periods <- calculate_period_returns(nasdaq_data, periods)
+
+# Merge the returns by date
+djia_returns <- data.frame(Date = index(djia_returns_periods), coredata(djia_returns_periods))
+nasdaq_returns <- data.frame(Date = index(nasdaq_returns_periods), coredata(nasdaq_returns_periods))
+
+# Combine returns into a single data frame
+all_returns <- merge(djia_returns, nasdaq_returns, by = "Date", suffixes = c("_DJI", "_IXIC"))
+all_returns <- na.omit(all_returns)
+
+# Calculate correlations
+correlations <- cor(all_returns[,-1], use = "complete.obs")
+
+# Plot enhanced heatmap using ggcorrplot
+heatmap_plot <- ggcorrplot(correlations, 
+                           method = "circle", 
+                           type = "lower", 
+                           lab = TRUE, 
+                           lab_size = 3, 
+                           colors = c("blue", "white", "red"), 
+                           title = "Heatmap of Returns Correlations",
+                           ggtheme = theme_minimal(base_size = 15) +
+                             theme(plot.background = element_rect(fill = "lightgrey"), 
+                                   panel.background = element_rect(fill = "white")))
+
+# Save the plot
+create_and_save_plot(heatmap_plot, "enhanced_heatmap_returns_correlations.png")
 
 # Save the environment for later use
 save.image(file = "data_analysis_environment.RData")
