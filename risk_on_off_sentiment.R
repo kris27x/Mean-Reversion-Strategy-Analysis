@@ -151,15 +151,17 @@ calculate_period_performance <- function(data, index_name, period, period_name) 
       
       if (length(period_returns) > 0) {
         avg_return <- mean(period_returns)
+        med_return <- median(period_returns)
         cat("Average", period_name, "Return:", avg_return, "\n")
-        results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Return = avg_return))
+        cat("Median", period_name, "Return:", med_return, "\n")
+        results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Average_Return = avg_return, Median_Return = med_return))
       } else {
         cat("Not enough data to calculate", period_name, "returns for", sentiment, "sentiment.\n")
-        results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Return = NA))
+        results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Average_Return = NA, Median_Return = NA))
       }
     } else {
       cat("No data available for", sentiment, "sentiment.\n")
-      results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Return = NA))
+      results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Average_Return = NA, Median_Return = NA))
     }
   }
   return(results)
@@ -264,6 +266,39 @@ print_performance_summary <- function(performance_summary) {
   print(performance_summary)
 }
 
+# New Function: Create bar chart for sentiment zone performance comparison
+create_bar_chart <- function(data, title) {
+  data_summary <- data %>%
+    group_by(Sentiment, Period) %>%
+    summarise(
+      Average_Return = mean(Average_Return, na.rm = TRUE),
+      Median_Return = mean(Median_Return, na.rm = TRUE)
+    ) %>%
+    ungroup()
+  
+  data_summary$Sentiment <- factor(data_summary$Sentiment, levels = c("Very High", "High", "Neutral", "Low", "Very Low"))
+  
+  p <- ggplot(data_summary, aes(x = Sentiment, fill = Sentiment)) +
+    geom_bar(aes(y = Average_Return), stat = "identity", position = "dodge", alpha = 0.6, show.legend = TRUE) +
+    geom_point(aes(y = Median_Return), color = "red", size = 3, shape = 16) +
+    geom_text(aes(y = Average_Return, label = round(Average_Return, 2)), vjust = -0.5, size = 3) +
+    geom_text(aes(y = Median_Return, label = round(Median_Return, 2)), vjust = 1.5, size = 3, color = "red") +
+    facet_wrap(~ Period, scales = "free_y") +
+    labs(title = title, x = "Sentiment Zone", y = "Return") +
+    theme_minimal(base_size = 15) +
+    scale_fill_brewer(palette = "Set1") +
+    theme(plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+          plot.background = element_rect(fill = "white"),
+          panel.background = element_rect(fill = "white"),
+          legend.background = element_rect(fill = "white")) +
+    guides(fill = guide_legend(title = "Sentiment Zone"),
+           shape = guide_legend(override.aes = list(color = "red"))) +
+    annotate("text", x = 1, y = -0.05, label = "Red Dots: Median Return\nBars: Average Return", 
+             hjust = 0, vjust = 0, color = "black", size = 3, fontface = "italic")
+  
+  return(p)
+}
+
 # Main script execution
 main <- function() {
   # Fetch and process VIX data
@@ -304,6 +339,14 @@ main <- function() {
   nasdaq_results <- combine_results(nasdaq_sentiment, "IXIC")
   print("Combined Results for Nasdaq:")
   print(nasdaq_results)
+  
+  # Create and save bar charts for performance comparison
+  p_bar_djia <- create_bar_chart(djia_results, "Dow Jones Performance by Sentiment Zone")
+  p_bar_nasdaq <- create_bar_chart(nasdaq_results, "Nasdaq Performance by Sentiment Zone")
+  print(p_bar_djia)
+  print(p_bar_nasdaq)
+  ggsave("dow_performance_bar_chart.png", plot = p_bar_djia, width = 10, height = 8)
+  ggsave("nasdaq_performance_bar_chart.png", plot = p_bar_nasdaq, width = 10, height = 8)
   
   # Calculate and plot correlation for Dow Jones
   p_correlation_djia <- calculate_and_plot_correlation(djia_sentiment, index_col = "DJI.Close", vix_col = "VIX.Close", sentiment_col = "Sentiment_Zone", index_name = "Dow Jones")
