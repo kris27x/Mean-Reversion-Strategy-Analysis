@@ -7,6 +7,7 @@ library(ggplot2)
 library(TTR)
 library(lubridate)
 library(tidyr)
+library(ggcorrplot)
 
 # Function to handle missing values in VIX data
 handle_missing_values <- function(data) {
@@ -178,6 +179,54 @@ combine_results <- function(data, index_name) {
   return(all_results)
 }
 
+# Function to calculate and plot the correlation matrix
+calculate_and_plot_correlation_matrix <- function(data, sentiment_col, returns_cols, index_name) {
+  # Check if the necessary columns are present in the data
+  required_cols <- c(sentiment_col, returns_cols)
+  if (!all(required_cols %in% colnames(data))) {
+    stop("Data does not contain the necessary columns.")
+  }
+  
+  # Ensure data is sorted by date
+  data <- data %>% arrange(date)
+  
+  # Initialize an empty list to store plots
+  plots <- list()
+  
+  # Calculate and plot correlation matrix for each sentiment zone
+  unique_sentiments <- unique(data[[sentiment_col]])
+  
+  for (sentiment in unique_sentiments) {
+    sentiment_data <- data %>% filter(.data[[sentiment_col]] == sentiment)
+    
+    # Calculate correlation matrix
+    correlation_matrix <- cor(sentiment_data[, returns_cols], use = "complete.obs")
+    
+    # Plot the correlation matrix using ggcorrplot
+    p <- ggcorrplot(correlation_matrix, method = "circle", type = "lower",
+                    lab = TRUE, lab_size = 8, p.mat = NULL, insig = "blank",
+                    colors = c("#003366", "white", "#FF3300"), 
+                    title = paste("Correlation Matrix for", index_name, "during", sentiment, "Sentiment"),
+                    ggtheme = theme_minimal(base_size = 20) + 
+                      theme(plot.title = element_text(hjust = 0.5, size = 24, face = "bold"),
+                            axis.text = element_text(size = 14, face = "bold"),
+                            axis.title = element_text(size = 16, face = "bold"),
+                            plot.background = element_rect(fill = "white", color = NA), 
+                            panel.background = element_rect(fill = "white", color = NA), 
+                            panel.grid.major = element_line(color = "gray90"),
+                            panel.grid.minor = element_blank(),
+                            plot.margin = margin(10, 10, 10, 10)))
+    
+    # Save the plot
+    ggsave(filename = paste0("correlation_matrix_", sentiment, ".png"), plot = p, width = 12, height = 8)
+    
+    # Store the plot in the list
+    plots[[sentiment]] <- p
+  }
+  
+  return(plots)
+}
+
 # Main script execution
 main <- function() {
   # Fetch and process VIX data
@@ -202,8 +251,8 @@ main <- function() {
   djia_returns <- calculate_returns(djia_data, "DJI.Close", "DJI.Open")
   
   # Merge VIX sentiment data with Nasdaq and Dow Jones data
-  nasdaq_sentiment <- nasdaq_returns %>% left_join(vix_data %>% select(date, Sentiment_Zone), by = "date")
-  djia_sentiment <- djia_returns %>% left_join(vix_data %>% select(date, Sentiment_Zone), by = "date")
+  nasdaq_sentiment <- nasdaq_returns %>% left_join(vix_data %>% select(date, VIX.Close, Sentiment_Zone), by = "date")
+  djia_sentiment <- djia_returns %>% left_join(vix_data %>% select(date, VIX.Close, Sentiment_Zone), by = "date")
   
   # Calculate and print performance for each sentiment for Dow Jones and Nasdaq
   calculate_performance_by_sentiment(djia_sentiment, "Dow Jones")
@@ -228,6 +277,20 @@ main <- function() {
   p_correlation_nasdaq <- calculate_and_plot_correlation(nasdaq_sentiment, index_col = "IXIC.Close", vix_col = "VIX.Close", sentiment_col = "Sentiment_Zone", index_name = "Nasdaq")
   print(p_correlation_nasdaq)
   ggsave("correlation_nasdaq_plot.png", plot = p_correlation_nasdaq, width = 10, height = 6)
+  
+  # Calculate and plot the correlation matrix for Dow Jones and Nasdaq
+  returns_cols <- c("VIX.Close", "IXIC.Close", "DJI.Close")
+  combined_data <- nasdaq_sentiment %>% 
+    full_join(djia_sentiment, by = c("date", "Sentiment_Zone"), suffix = c("_nasdaq", "_djia")) %>% 
+    select(date, Sentiment_Zone, starts_with("VIX"), starts_with("IXIC"), starts_with("DJI")) %>% 
+    rename("VIX.Close" = "VIX.Close_nasdaq")
+  
+  p_correlation_matrices <- calculate_and_plot_correlation_matrix(combined_data, sentiment_col = "Sentiment_Zone", returns_cols = returns_cols, index_name = "Market Indices")
+  
+  # Print each plot
+  for (sentiment in names(p_correlation_matrices)) {
+    print(p_correlation_matrices[[sentiment]])
+  }
   
   # Save the environment for later use
   save.image(file = "performance_analysis_based_on_sentiment.RData")
