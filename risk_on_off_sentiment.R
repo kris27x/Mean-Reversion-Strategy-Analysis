@@ -51,7 +51,8 @@ calculate_sentiment_scores <- function(data) {
       Z_Score = (VIX.Close - vix_mean) / vix_sd,
       Sentiment_Score = 50 + (Z_Score * 10),
       Sentiment_Score = ifelse(Sentiment_Score < 0, 0, ifelse(Sentiment_Score > 100, 100, Sentiment_Score)),
-      Sentiment_Zone = cut(Sentiment_Score, breaks = c(-Inf, 39, 42, 58, 66, Inf), labels = c("Very High", "High", "Neutral", "Low", "Very Low")),
+      Sentiment_Zone = factor(cut(Sentiment_Score, breaks = c(-Inf, 39, 42, 58, 66, Inf), labels = c("Very High", "High", "Neutral", "Low", "Very Low")), 
+                              levels = c("Very High", "High", "Neutral", "Low", "Very Low")),
       lead_date = lead(date, default = last(date))
     )
 }
@@ -154,14 +155,14 @@ calculate_period_performance <- function(data, index_name, period, period_name) 
         med_return <- median(period_returns)
         cat("Average", period_name, "Return:", avg_return, "\n")
         cat("Median", period_name, "Return:", med_return, "\n")
-        results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Average_Return = avg_return, Median_Return = med_return))
+        results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Return = period_returns, Average_Return = avg_return, Median_Return = med_return))
       } else {
         cat("Not enough data to calculate", period_name, "returns for", sentiment, "sentiment.\n")
-        results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Average_Return = NA, Median_Return = NA))
+        results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Return = NA, Average_Return = NA, Median_Return = NA))
       }
     } else {
       cat("No data available for", sentiment, "sentiment.\n")
-      results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Average_Return = NA, Median_Return = NA))
+      results <- rbind(results, data.frame(Sentiment = sentiment, Period = period_name, Return = NA, Average_Return = NA, Median_Return = NA))
     }
   }
   return(results)
@@ -266,7 +267,7 @@ print_performance_summary <- function(performance_summary) {
   print(performance_summary)
 }
 
-# New Function: Create bar chart for sentiment zone performance comparison
+# Function to create bar chart for sentiment zone performance comparison
 create_bar_chart <- function(data, title) {
   data_summary <- data %>%
     group_by(Sentiment, Period) %>%
@@ -295,6 +296,28 @@ create_bar_chart <- function(data, title) {
            shape = guide_legend(override.aes = list(color = "red"))) +
     annotate("text", x = 1, y = -0.05, label = "Red Dots: Median Return\nBars: Average Return", 
              hjust = 0, vjust = 0, color = "black", size = 3, fontface = "italic")
+  
+  return(p)
+}
+
+# Function to create boxplot for sentiment zone performance comparison
+create_boxplot <- function(data, title) {
+  data <- data %>%
+    unnest(Return) %>%
+    drop_na(Return)
+  
+  data$Sentiment <- factor(data$Sentiment, levels = c("Very High", "High", "Neutral", "Low", "Very Low"))
+  
+  p <- ggplot(data, aes(x = Sentiment, y = Return, fill = Sentiment)) +
+    geom_boxplot() +
+    facet_wrap(~ Period, scales = "free_y") +
+    labs(title = title, x = "Sentiment Zone", y = "Return") +
+    theme_minimal(base_size = 15) +
+    scale_fill_brewer(palette = "Set1") +
+    theme(plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+          plot.background = element_rect(fill = "white"),
+          panel.background = element_rect(fill = "white"),
+          legend.background = element_rect(fill = "white"))
   
   return(p)
 }
@@ -347,6 +370,14 @@ main <- function() {
   print(p_bar_nasdaq)
   ggsave("dow_performance_bar_chart.png", plot = p_bar_djia, width = 10, height = 8)
   ggsave("nasdaq_performance_bar_chart.png", plot = p_bar_nasdaq, width = 10, height = 8)
+  
+  # Create and save box plots for performance comparison
+  p_box_djia <- create_boxplot(djia_results, "Dow Jones Performance by Sentiment Zone")
+  p_box_nasdaq <- create_boxplot(nasdaq_results, "Nasdaq Performance by Sentiment Zone")
+  print(p_box_djia)
+  print(p_box_nasdaq)
+  ggsave("dow_performance_boxplot.png", plot = p_box_djia, width = 10, height = 8)
+  ggsave("nasdaq_performance_boxplot.png", plot = p_box_nasdaq, width = 10, height = 8)
   
   # Calculate and plot correlation for Dow Jones
   p_correlation_djia <- calculate_and_plot_correlation(djia_sentiment, index_col = "DJI.Close", vix_col = "VIX.Close", sentiment_col = "Sentiment_Zone", index_name = "Dow Jones")
