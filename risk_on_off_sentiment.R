@@ -73,6 +73,32 @@ plot_vix_sentiment <- function(data) {
     theme(plot.background = element_rect(fill = "white"), panel.background = element_rect(fill = "white"))
 }
 
+# Function to calculate correlation between VIX and market indices during different sentiment zones
+calculate_and_plot_correlation <- function(data, index_col, vix_col, sentiment_col, index_name) {
+  # Calculate correlation for each sentiment zone
+  correlation_results <- data %>%
+    group_by(.data[[sentiment_col]]) %>%
+    summarize(
+      Correlation = cor(.data[[index_col]], .data[[vix_col]], use = "complete.obs")
+    ) %>%
+    ungroup()
+  
+  print(correlation_results)
+  
+  # Plot the correlation results
+  p <- ggplot(correlation_results, aes(x = .data[[sentiment_col]], y = Correlation, fill = .data[[sentiment_col]])) +
+    geom_bar(stat = "identity") +
+    scale_fill_manual(values = c("Very High" = "darkred", "High" = "darkorange", "Neutral" = "gray", "Low" = "darkgreen", "Very Low" = "blue")) +
+    labs(title = paste("Correlation between VIX and", index_name, "by Sentiment Zone"),
+         subtitle = paste(index_name, "and VIX Index Correlation Analysis"),
+         x = "Sentiment Zone", y = "Correlation",
+         fill = "Sentiment Zone") +
+    theme_minimal(base_size = 15) +
+    theme(plot.background = element_rect(fill = "white"), panel.background = element_rect(fill = "white"))
+  
+  return(p)
+}
+
 # Function to calculate performance based on sentiment
 calculate_performance_by_sentiment <- function(data, index_name) {
   sentiments <- c("Very Low", "Low", "Neutral", "High", "Very High")
@@ -192,6 +218,16 @@ main <- function() {
   nasdaq_results <- combine_results(nasdaq_sentiment, "IXIC")
   print("Combined Results for Nasdaq:")
   print(nasdaq_results)
+  
+  # Calculate and plot correlation for Dow Jones
+  p_correlation_djia <- calculate_and_plot_correlation(djia_sentiment, index_col = "DJI.Close", vix_col = "VIX.Close", sentiment_col = "Sentiment_Zone", index_name = "Dow Jones")
+  print(p_correlation_djia)
+  ggsave("correlation_djia_plot.png", plot = p_correlation_djia, width = 10, height = 6)
+  
+  # Calculate and plot correlation for Nasdaq
+  p_correlation_nasdaq <- calculate_and_plot_correlation(nasdaq_sentiment, index_col = "IXIC.Close", vix_col = "VIX.Close", sentiment_col = "Sentiment_Zone", index_name = "Nasdaq")
+  print(p_correlation_nasdaq)
+  ggsave("correlation_nasdaq_plot.png", plot = p_correlation_nasdaq, width = 10, height = 6)
   
   # Save the environment for later use
   save.image(file = "performance_analysis_based_on_sentiment.RData")
