@@ -96,9 +96,59 @@ plot_rolling_sharpe <- function(nasdaq_sharpe, dow_sharpe) {
   return(p)
 }
 
+# Function to plot Volatility (VIX) vs. Market Indices (Nasdaq and Dow Jones) interactively
+plot_volatility_vs_indices_interactive <- function(vix_data, nasdaq_data, djia_data) {
+  # Convert xts objects to data frames
+  vix_df <- data.frame(date = index(vix_data), coredata(vix_data))
+  nasdaq_df <- data.frame(date = index(nasdaq_data), coredata(nasdaq_data))
+  djia_df <- data.frame(date = index(djia_data), coredata(djia_data))
+  
+  # Rename columns for consistency
+  colnames(vix_df) <- c("date", "VIX.Close")
+  colnames(nasdaq_df) <- c("date", "IXIC.Close")
+  colnames(djia_df) <- c("date", "DJI.Close")
+  
+  # Merge the data frames by date
+  combined_data <- vix_df %>%
+    inner_join(nasdaq_df, by = "date") %>%
+    inner_join(djia_df, by = "date")
+  
+  # Normalize the indices to the same starting point for better comparison
+  combined_data <- combined_data %>%
+    mutate(VIX_Scaled = scale(VIX.Close, center = FALSE, scale = max(VIX.Close)),
+           IXIC_Scaled = scale(IXIC.Close, center = FALSE, scale = max(IXIC.Close)),
+           DJI_Scaled = scale(DJI.Close, center = FALSE, scale = max(DJI.Close)))
+  
+  # Create the ggplot
+  p <- ggplot(combined_data, aes(x = date)) +
+    geom_line(aes(y = IXIC_Scaled, color = "IXIC.Close"), size = 1) +
+    geom_line(aes(y = DJI_Scaled, color = "DJI.Close"), size = 1) +
+    geom_line(aes(y = VIX_Scaled, color = "VIX.Close"), size = 0.5) +
+    scale_color_manual(values = c("IXIC.Close" = "red", "DJI.Close" = "green", "VIX.Close" = "blue")) +
+    scale_y_continuous(
+      name = "Market Indices (Scaled)",
+      sec.axis = sec_axis(~ . * max(combined_data$VIX.Close), name = "VIX Index")
+    ) +
+    labs(title = "Volatility (VIX) vs. Market Indices (Nasdaq and Dow Jones)",
+         x = "Date",
+         y = "Market Indices (Scaled)",
+         color = "Index") +
+    theme_minimal(base_size = 15) +
+    theme(plot.background = element_rect(fill = "white"),
+          panel.background = element_rect(fill = "white"),
+          axis.title.y.right = element_text(color = "blue"),
+          axis.text.y.right = element_text(color = "blue"))
+  
+  # Convert the ggplot to a plotly object
+  p_interactive <- ggplotly(p)
+  
+  return(p_interactive)
+}
+
 # Download historical data
 nasdaq_data <- get_data("^IXIC")
 dow_data <- get_data("^DJI")
+vix_data <- get_data("^VIX")
 
 # Merge data frames on date and ensure alignment
 merged_data <- merge(nasdaq_data, dow_data, all = TRUE)
@@ -155,7 +205,8 @@ ui <- fluidPage(
           tabsetPanel(
             tabPanel("Drawdowns", plotlyOutput("drawdownPlot")),
             tabPanel("Relative Performance", dygraphOutput("relativePerformancePlot")),
-            tabPanel("Rolling Sharpe Ratio", plotlyOutput("rollingSharpePlot"))
+            tabPanel("Rolling Sharpe Ratio", plotlyOutput("rollingSharpePlot")),
+            tabPanel("Volatility vs. Market Indices", plotlyOutput("volatilityPlot"))  # New tab for the interactive plot
           )
       )
   )
@@ -195,6 +246,10 @@ server <- function(input, output) {
     
     # Plot rolling Sharpe ratio
     plot_rolling_sharpe(nasdaq_sharpe, dow_sharpe)
+  })
+  
+  output$volatilityPlot <- renderPlotly({
+    plot_volatility_vs_indices_interactive(vix_data, nasdaq_data, dow_data)
   })
 }
 
