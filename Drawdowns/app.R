@@ -6,6 +6,8 @@ library(dplyr)
 library(tidyr)
 library(quantmod)
 library(plotly)
+library(dygraphs)
+library(RColorBrewer)
 
 # Function to calculate and plot drawdowns using plotly
 plot_drawdowns <- function(nasdaq_data, dow_data) {
@@ -46,8 +48,51 @@ plot_drawdowns <- function(nasdaq_data, dow_data) {
   p
 }
 
-# Load historical data for testing
-getSymbols(c("^IXIC", "^DJI"), src = "yahoo", from = "2000-01-01")
+# Function to handle missing values
+handle_missing_values <- function(data) {
+  data <- na.approx(data, maxgap = Inf, na.rm = FALSE)  # Linear interpolation
+  data <- na.locf(data, fromLast = FALSE)  # Forward fill remaining NAs
+  data <- na.locf(data, fromLast = TRUE)  # Backward fill remaining NAs
+  na.omit(data)  # Remove any remaining NAs
+}
+
+# Function to download and handle data
+get_data <- function(symbol) {
+  tryCatch({
+    data <- getSymbols(symbol, src = "yahoo", from = "2000-01-01", auto.assign = FALSE)
+    adjusted_data <- data[, 6]  # Use adjusted close price for accurate calculations
+    adjusted_data <- handle_missing_values(adjusted_data)
+    return(adjusted_data)
+  }, error = function(e) {
+    stop(paste("Error downloading data for symbol:", symbol))
+  })
+}
+
+# Download historical data
+nasdaq_data <- get_data("^IXIC")
+dow_data <- get_data("^DJI")
+
+# Merge data frames on date and ensure alignment
+merged_data <- merge(nasdaq_data, dow_data, all = TRUE)
+colnames(merged_data) <- c("Nasdaq", "Dow")
+
+# Handle missing values after merging to ensure complete cases
+merged_data <- merged_data %>%
+  na.locf(fromLast = FALSE) %>%
+  na.locf(fromLast = TRUE) %>%
+  na.omit()
+
+# Calculate relative performance
+relative_performance <- merged_data$Nasdaq / merged_data$Dow
+
+# Apply k-means clustering to identify regimes
+set.seed(123)  # For reproducibility
+kmeans_result <- kmeans(as.numeric(relative_performance), centers = 3)
+clusters <- factor(kmeans_result$cluster)
+
+# Create an xts object for relative performance and clusters
+relative_performance_xts <- xts(cbind(relative_performance, clusters), order.by = index(merged_data))
+colnames(relative_performance_xts) <- c("Relative_Performance", "Cluster")
 
 # Define UI for the application
 ui <- fluidPage(
@@ -78,8 +123,11 @@ ui <- fluidPage(
   
   div(class = "main-container",
       div(class = "content-panel",
-          div(class = "title", "Nasdaq and Dow Jones Drawdowns"),
-          plotlyOutput("drawdownPlot")
+          div(class = "title", "Nasdaq and Dow Jones Analysis"),
+          tabsetPanel(
+            tabPanel("Drawdowns", plotlyOutput("drawdownPlot")),
+            tabPanel("Relative Performance", dygraphOutput("relativePerformancePlot"))
+          )
       )
   )
 )
@@ -87,7 +135,20 @@ ui <- fluidPage(
 # Define server logic
 server <- function(input, output) {
   output$drawdownPlot <- renderPlotly({
-    plot_drawdowns(IXIC, DJI)
+    plot_drawdowns(nasdaq_data, dow_data)
+  })
+  
+  output$relativePerformancePlot <- renderDygraph({
+    dygraph(relative_performance_xts[, "Relative_Performance"], main = "Relative Performance of Nasdaq vs. Dow Jones") %>%
+      dySeries("Relative_Performance", label = "Relative Performance (IXIC / DJI)") %>%
+      dyOptions(colors = RColorBrewer::brewer.pal(3, "Set1")) %>%
+      dyRangeSelector() %>%
+      dyCrosshair(direction = "both") %>%
+      dyHighlight(highlightSeriesOpts = list(strokeWidth = 3)) %>%
+      dyLegend(show = "always", hideOnMouseOut = FALSE) %>%
+      dyShading(from = index(relative_performance_xts)[clusters == 1], to = index(relative_performance_xts)[clusters == 1], color = "#FFCCCC") %>%
+      dyShading(from = index(relative_performance_xts)[clusters == 2], to = index(relative_performance_xts)[clusters == 2], color = "#CCCCFF") %>%
+      dyShading(from = index(relative_performance_xts)[clusters == 3], to = index(relative_performance_xts)[clusters == 3], color = "#CCFFCC")
   })
 }
 
