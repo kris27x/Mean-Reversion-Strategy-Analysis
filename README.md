@@ -2,7 +2,7 @@
 Quantitative Analysis - Hedged Mean Reversion Strategy - Nasdaq &amp; Dow Jones Correlation - Historical Market Data Analysis (R)
 
 As a trader, I've noticed that two major US indices - Dow Jones and Nasdaq tend to move in the opposite directions, exceeding some I'd say standard deviation of its correlation.
-What's odd, despite the very high correlation these indices have, 'The Gap' in the price movement between them can rise quite significant, but temporarily.
+What's odd, despite the very high correlation these indices have, 'The Gap' in the price movement between them can rise quite significantly, but temporarily.
 I observed some patterns, so called 'The Gap' expands and shrinks to some extend consecutively and repeatedly. It happens on many time-frames.
 
 I decided to delve deeper, in order to build a Hedged Mean Reversion Strategy and back-test it on the historical data. The strategy aims to sell one of the mentioned indices which is performing better when deviation from the correlation mean or 'The Gap' is reaching its extremes, and buy worse performing index at the same time.
