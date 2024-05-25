@@ -236,6 +236,34 @@ calculate_and_print_general_correlation <- function(nasdaq_data, djia_data) {
   cat("General Correlation between Nasdaq and Dow Jones:", correlation, "\n")
 }
 
+# Function to calculate performance summary metrics for each sentiment zone
+calculate_performance_summary <- function(data, sentiment_col, returns_col) {
+  # Check if the necessary columns are present in the data
+  required_cols <- c(sentiment_col, returns_col)
+  if (!all(required_cols %in% colnames(data))) {
+    stop("Data does not contain the necessary columns.")
+  }
+  
+  # Calculate performance metrics
+  performance_summary <- data %>%
+    group_by(.data[[sentiment_col]]) %>%
+    summarize(
+      Mean_Return = mean(.data[[returns_col]], na.rm = TRUE),
+      Median_Return = median(.data[[returns_col]], na.rm = TRUE),
+      Std_Dev_Return = sd(.data[[returns_col]], na.rm = TRUE),
+      .groups = 'drop'
+    ) %>%
+    arrange(.data[[sentiment_col]])
+  
+  return(performance_summary)
+}
+
+# Function to print performance summary table
+print_performance_summary <- function(performance_summary) {
+  # Print the performance summary table
+  print(performance_summary)
+}
+
 # Main script execution
 main <- function() {
   # Fetch and process VIX data
@@ -303,6 +331,16 @@ main <- function() {
   
   # Calculate and print the general correlation between Nasdaq and Dow Jones
   calculate_and_print_general_correlation(nasdaq_data, djia_data)
+  
+  # Calculate and print performance summary for Nasdaq and Dow Jones
+  nasdaq_performance_summary <- calculate_performance_summary(nasdaq_sentiment, sentiment_col = "Sentiment_Zone", returns_col = "Total_Return")
+  djia_performance_summary <- calculate_performance_summary(djia_sentiment, sentiment_col = "Sentiment_Zone", returns_col = "Total_Return")
+  
+  cat("Performance Summary for Nasdaq:\n")
+  print_performance_summary(nasdaq_performance_summary)
+  
+  cat("Performance Summary for Dow Jones:\n")
+  print_performance_summary(djia_performance_summary)
   
   # Save the environment for later use
   save.image(file = "performance_analysis_based_on_sentiment.RData")
