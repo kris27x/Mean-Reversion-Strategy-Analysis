@@ -68,6 +68,34 @@ get_data <- function(symbol) {
   })
 }
 
+# Function to calculate rolling Sharpe ratio
+calculate_rolling_sharpe <- function(returns, window) {
+  sharpe_ratio <- rollapply(returns, width = window, FUN = function(x) mean(x) / sd(x) * sqrt(252), by.column = FALSE, fill = NA)
+  return(sharpe_ratio)
+}
+
+# Function to plot rolling Sharpe ratio
+plot_rolling_sharpe <- function(nasdaq_sharpe, dow_sharpe) {
+  # Create a data frame for plotting
+  sharpe_data <- data.frame(
+    date = index(nasdaq_sharpe),
+    Nasdaq_Sharpe = coredata(nasdaq_sharpe),
+    Dow_Sharpe = coredata(dow_sharpe)
+  )
+  
+  # Create the plotly object
+  p <- plot_ly(sharpe_data, x = ~date) %>%
+    add_lines(y = ~Nasdaq_Sharpe, name = "Nasdaq Sharpe Ratio", line = list(color = 'rgb(0, 176, 246)')) %>%
+    add_lines(y = ~Dow_Sharpe, name = "Dow Sharpe Ratio", line = list(color = 'rgb(255, 0, 0)')) %>%
+    layout(title = "Rolling Sharpe Ratio Over Time",
+           xaxis = list(title = "Date"),
+           yaxis = list(title = "Sharpe Ratio"),
+           plot_bgcolor = 'white',
+           paper_bgcolor = 'white')
+  
+  return(p)
+}
+
 # Download historical data
 nasdaq_data <- get_data("^IXIC")
 dow_data <- get_data("^DJI")
@@ -126,7 +154,8 @@ ui <- fluidPage(
           div(class = "title", "Nasdaq and Dow Jones Analysis"),
           tabsetPanel(
             tabPanel("Drawdowns", plotlyOutput("drawdownPlot")),
-            tabPanel("Relative Performance", dygraphOutput("relativePerformancePlot"))
+            tabPanel("Relative Performance", dygraphOutput("relativePerformancePlot")),
+            tabPanel("Rolling Sharpe Ratio", plotlyOutput("rollingSharpePlot"))
           )
       )
   )
@@ -149,6 +178,23 @@ server <- function(input, output) {
       dyShading(from = index(relative_performance_xts)[clusters == 1], to = index(relative_performance_xts)[clusters == 1], color = "#FFCCCC") %>%
       dyShading(from = index(relative_performance_xts)[clusters == 2], to = index(relative_performance_xts)[clusters == 2], color = "#CCCCFF") %>%
       dyShading(from = index(relative_performance_xts)[clusters == 3], to = index(relative_performance_xts)[clusters == 3], color = "#CCFFCC")
+  })
+  
+  output$rollingSharpePlot <- renderPlotly({
+    # Calculate daily returns
+    nasdaq_returns <- dailyReturn(nasdaq_data)
+    dow_returns <- dailyReturn(dow_data)
+    
+    # Calculate rolling Sharpe ratio
+    nasdaq_sharpe <- calculate_rolling_sharpe(nasdaq_returns, window = 252)
+    dow_sharpe <- calculate_rolling_sharpe(dow_returns, window = 252)
+    
+    # Ensure the data has no NA values before plotting
+    nasdaq_sharpe <- na.omit(nasdaq_sharpe)
+    dow_sharpe <- na.omit(dow_sharpe)
+    
+    # Plot rolling Sharpe ratio
+    plot_rolling_sharpe(nasdaq_sharpe, dow_sharpe)
   })
 }
 
