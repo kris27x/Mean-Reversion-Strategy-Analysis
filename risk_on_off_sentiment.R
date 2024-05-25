@@ -227,6 +227,15 @@ calculate_and_plot_correlation_matrix <- function(data, sentiment_col, returns_c
   return(plots)
 }
 
+# Function to calculate and print general correlation between Nasdaq and Dow Jones
+calculate_and_print_general_correlation <- function(nasdaq_data, djia_data) {
+  combined_data <- nasdaq_data %>%
+    inner_join(djia_data, by = "date", suffix = c("_nasdaq", "_djia"))
+  
+  correlation <- cor(combined_data$IXIC.Close, combined_data$DJI.Close, use = "complete.obs")
+  cat("General Correlation between Nasdaq and Dow Jones:", correlation, "\n")
+}
+
 # Main script execution
 main <- function() {
   # Fetch and process VIX data
@@ -291,6 +300,9 @@ main <- function() {
   for (sentiment in names(p_correlation_matrices)) {
     print(p_correlation_matrices[[sentiment]])
   }
+  
+  # Calculate and print the general correlation between Nasdaq and Dow Jones
+  calculate_and_print_general_correlation(nasdaq_data, djia_data)
   
   # Save the environment for later use
   save.image(file = "performance_analysis_based_on_sentiment.RData")
