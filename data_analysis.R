@@ -304,5 +304,128 @@ heatmap_plot <- ggcorrplot(correlations,
 # Save the plot
 create_and_save_plot(heatmap_plot, "enhanced_heatmap_returns_correlations.png")
 
+# Function to calculate monthly and quarterly returns
+calculate_seasonal_returns <- function(data) {
+  monthly_returns <- periodReturn(data, period = "monthly", type = "log")
+  quarterly_returns <- periodReturn(data, period = "quarterly", type = "log")
+  
+  monthly_df <- data.frame(date = index(monthly_returns), monthly.returns = coredata(monthly_returns))
+  quarterly_df <- data.frame(date = index(quarterly_returns), quarterly.returns = coredata(quarterly_returns))
+  
+  monthly_df$month <- factor(month(monthly_df$date), levels = 1:12, labels = month.name)
+  quarterly_df$quarter <- factor(quarter(quarterly_df$date), levels = 1:4, labels = c("Q1", "Q2", "Q3", "Q4"))
+  
+  list(monthly = monthly_df, quarterly = quarterly_df)
+}
+
+# Function to create and save professional seasonal plots with enhanced descriptions
+create_seasonal_plots <- function(seasonal_data, filename_prefix, index_name) {
+  # High-quality theme for plots
+  professional_theme <- theme_minimal(base_size = 15) +
+    theme(plot.background = element_rect(fill = "white"),
+          panel.background = element_rect(fill = "white"),
+          panel.grid.major = element_line(color = "gray80"),
+          panel.grid.minor = element_line(color = "gray90"),
+          legend.position = "none",
+          axis.text = element_text(color = "black"),
+          axis.title = element_text(face = "bold"),
+          plot.title = element_text(hjust = 0.5, face = "bold"))
+  
+  # Monthly histogram plot
+  p_monthly_hist <- ggplot(seasonal_data$monthly, aes(x = monthly.returns, fill = month)) +
+    geom_histogram(bins = 30, alpha = 0.7, position = "identity") +
+    scale_fill_brewer(palette = "Paired") +
+    labs(title = paste("Histogram of Monthly Returns for", index_name),
+         x = "Log Returns",
+         y = "Frequency",
+         caption = paste("Data Source: Yahoo Finance\nPeriod: 2000-2024\nIndex:", index_name)) +
+    facet_wrap(~month, scales = "free_y") +
+    professional_theme
+  
+  print("Monthly Histogram Plot:")
+  print(p_monthly_hist)
+  
+  ggsave(paste0(filename_prefix, "_monthly_hist.png"), plot = p_monthly_hist, width = 10, height = 6, dpi = 300)
+  
+  # Quarterly density plot
+  p_quarterly_density <- ggplot(seasonal_data$quarterly, aes(x = quarterly.returns, fill = quarter)) +
+    geom_density(alpha = 0.7) +
+    scale_fill_brewer(palette = "Paired") +
+    labs(title = paste("Density Plot of Quarterly Returns for", index_name),
+         x = "Log Returns",
+         y = "Density",
+         caption = paste("Data Source: Yahoo Finance\nPeriod: 2000-2024\nIndex:", index_name)) +
+    facet_wrap(~quarter, scales = "free_y") +
+    professional_theme
+  
+  print("Quarterly Density Plot:")
+  print(p_quarterly_density)
+  
+  ggsave(paste0(filename_prefix, "_quarterly_density.png"), plot = p_quarterly_density, width = 10, height = 6, dpi = 300)
+  
+  # Average monthly return plot
+  avg_monthly_returns <- seasonal_data$monthly %>%
+    group_by(month) %>%
+    summarise(avg_return = mean(monthly.returns))
+  
+  p_avg_monthly_return <- ggplot(avg_monthly_returns, aes(x = month, y = avg_return, fill = month)) +
+    geom_bar(stat = "identity", alpha = 0.7) +
+    scale_fill_brewer(palette = "Paired") +
+    labs(title = paste("Average Monthly Returns for", index_name),
+         x = "Month",
+         y = "Average Log Return",
+         caption = paste("Data Source: Yahoo Finance\nPeriod: 2000-2024\nIndex:", index_name)) +
+    professional_theme +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  print("Average Monthly Return Plot:")
+  print(p_avg_monthly_return)
+  
+  ggsave(paste0(filename_prefix, "_avg_monthly_return.png"), plot = p_avg_monthly_return, width = 10, height = 6, dpi = 300)
+  
+  # Median monthly return plot
+  median_monthly_returns <- seasonal_data$monthly %>%
+    group_by(month) %>%
+    summarise(median_return = median(monthly.returns))
+  
+  p_median_monthly_return <- ggplot(median_monthly_returns, aes(x = month, y = median_return, fill = month)) +
+    geom_bar(stat = "identity", alpha = 0.7) +
+    scale_fill_brewer(palette = "Paired") +
+    labs(title = paste("Median Monthly Returns for", index_name),
+         x = "Month",
+         y = "Median Log Return",
+         caption = paste("Data Source: Yahoo Finance\nPeriod: 2000-2024\nIndex:", index_name)) +
+    professional_theme +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  print("Median Monthly Return Plot:")
+  print(p_median_monthly_return)
+  
+  ggsave(paste0(filename_prefix, "_median_monthly_return.png"), plot = p_median_monthly_return, width = 10, height = 6, dpi = 300)
+  
+  return(list(monthly_hist = p_monthly_hist, quarterly_density = p_quarterly_density, avg_monthly_return = p_avg_monthly_return, median_monthly_return = p_median_monthly_return))
+}
+
+# Calculate seasonal returns
+nasdaq_seasonal_returns <- calculate_seasonal_returns(nasdaq_data)
+djia_seasonal_returns <- calculate_seasonal_returns(djia_data)
+
+# Create and save seasonal plots for Nasdaq and DJIA
+nasdaq_plots <- create_seasonal_plots(nasdaq_seasonal_returns, "nasdaq", "NASDAQ Composite")
+djia_plots <- create_seasonal_plots(djia_seasonal_returns, "djia", "Dow Jones Industrial Average")
+
+# Print average and median monthly returns
+print("Average Monthly Returns for Dow Jones:")
+print(djia_seasonal_returns$monthly %>% group_by(month) %>% summarise(avg_return = mean(monthly.returns)))
+
+print("Average Monthly Returns for Nasdaq:")
+print(nasdaq_seasonal_returns$monthly %>% group_by(month) %>% summarise(avg_return = mean(monthly.returns)))
+
+print("Median Monthly Returns for Dow Jones:")
+print(djia_seasonal_returns$monthly %>% group_by(month) %>% summarise(median_return = median(monthly.returns)))
+
+print("Median Monthly Returns for Nasdaq:")
+print(nasdaq_seasonal_returns$monthly %>% group_by(month) %>% summarise(median_return = median(monthly.returns)))
+
 # Save the environment for later use
 save.image(file = "data_analysis_environment.RData")
