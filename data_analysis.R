@@ -1,14 +1,11 @@
-# data_analysis.R
-
 # Load necessary libraries
-required_packages <- c("quantmod", "dplyr", "ggplot2", "lubridate", "tidyr", "TTR", "PerformanceAnalytics", "reshape2", "ggcorrplot")
+required_packages <- c("quantmod", "dplyr", "ggplot2", "lubridate", "tidyr", "TTR", "PerformanceAnalytics", "reshape2", "ggcorrplot", "zoo")
 new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages)
 lapply(required_packages, library, character.only = TRUE)
 
 # Function to handle missing values
 handle_missing_values <- function(data) {
-  # Fill NA using linear interpolation, forward fill, and backward fill
   data <- na.approx(data, maxgap = Inf, na.rm = FALSE)  # Linear interpolation
   data <- na.locf(data, fromLast = FALSE)  # Forward fill remaining NAs
   data <- na.locf(data, fromLast = TRUE)  # Backward fill remaining NAs
@@ -34,7 +31,8 @@ calculate_returns <- function(data, close_col, open_col) {
 get_data <- function(symbol) {
   tryCatch({
     data <- getSymbols(symbol, src = "yahoo", from = "2000-01-01", auto.assign = FALSE)
-    handle_missing_values(data)
+    data <- handle_missing_values(data)
+    data
   }, error = function(e) {
     stop(paste("Error downloading data for symbol:", symbol))
   })
@@ -69,15 +67,15 @@ print(head(djia_df))
 print(head(nasdaq_df))
 
 # Descriptive Statistics
-djia_stats <- summary(djia_df[["DJI.Close"]])
-nasdaq_stats <- summary(nasdaq_df[["IXIC.Close"]])
+djia_stats <- summary(djia_df$DJI.Close)
+nasdaq_stats <- summary(nasdaq_df$IXIC.Close)
 djia_returns_stats <- summary(dailyReturn(djia_data))
 nasdaq_returns_stats <- summary(dailyReturn(nasdaq_data))
 
-cat("Descriptive Statistics for DJI Closing Prices:\n", djia_stats)
-cat("Descriptive Statistics for IXIC Closing Prices:\n", nasdaq_stats)
-cat("Descriptive Statistics for DJI Daily Returns:\n", djia_returns_stats)
-cat("Descriptive Statistics for IXIC Daily Returns:\n", nasdaq_returns_stats)
+cat("Descriptive Statistics for DJI Closing Prices:\n", djia_stats, "\n")
+cat("Descriptive Statistics for IXIC Closing Prices:\n", nasdaq_stats, "\n")
+cat("Descriptive Statistics for DJI Daily Returns:\n", djia_returns_stats, "\n")
+cat("Descriptive Statistics for IXIC Daily Returns:\n", nasdaq_returns_stats, "\n")
 
 # Function to create and save plots
 create_and_save_plot <- function(plot, filename) {
@@ -176,7 +174,7 @@ returns_data <- data.frame(date = index(returns_xts), coredata(returns_xts))
 returns_data <- na.omit(returns_data)
 
 correlation <- cor(returns_data$DJI_Returns, returns_data$IXIC_Returns, use = "complete.obs")
-cat("Correlation between Dow Jones and Nasdaq returns: ", correlation)
+cat("Correlation between Dow Jones and Nasdaq returns: ", correlation, "\n")
 
 # Plot daily returns
 p6 <- ggplot(returns_data, aes(x = date)) +
