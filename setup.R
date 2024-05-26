@@ -13,7 +13,7 @@ install_and_load <- function(packages) {
 cran_packages <- c("quantmod", "TTR", "PerformanceAnalytics", "xts", "zoo", "dplyr", "ggplot2", 
                    "tidyquant", "lubridate", "caret", "data.table", "readr", "httr", "jsonlite", 
                    "ROI", "forecast", "nloptr", "rmarkdown", "bookdown", "knitr", "ggcorrplot", 
-                   "plotly", "factoextra", "dygraphs" , "tidyr" , "reshape2" , "shiny")
+                   "plotly", "factoextra", "dygraphs" , "tidyr" , "reshape2" , "shiny" , "RColorBrewer")
 
 # Install and load CRAN packages
 install_and_load(cran_packages)
