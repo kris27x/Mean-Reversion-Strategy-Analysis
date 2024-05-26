@@ -149,9 +149,9 @@ plot_volatility_vs_indices_interactive <- function(vix_data, nasdaq_data, djia_d
   
   # Create the ggplot
   p <- ggplot(combined_data, aes(x = date)) +
-    geom_line(aes(y = IXIC_Scaled, color = "IXIC.Close"), size = 1) +
-    geom_line(aes(y = DJI_Scaled, color = "DJI.Close"), size = 1) +
-    geom_line(aes(y = VIX_Scaled, color = "VIX.Close"), size = 0.5) +
+    geom_line(aes(y = IXIC_Scaled, color = "IXIC.Close"), linewidth = 1) +
+    geom_line(aes(y = DJI_Scaled, color = "DJI.Close"), linewidth = 1) +
+    geom_line(aes(y = VIX_Scaled, color = "VIX.Close"), linewidth = 0.5) +
     scale_color_manual(values = c("IXIC.Close" = "red", "DJI.Close" = "green", "VIX.Close" = "blue")) +
     scale_y_continuous(
       name = "Market Indices (Scaled)",
@@ -176,7 +176,7 @@ plot_volatility_vs_indices_interactive <- function(vix_data, nasdaq_data, djia_d
 # Download historical data
 nasdaq_data <- get_data("^IXIC")
 dow_data <- get_data("^DJI")
-vix_data <- get_data("^VIX")
+vix_data <- handle_missing_values(get_data("^VIX"))  # Handle missing values for VIX data
 
 # Merge data frames on date and ensure alignment
 merged_data <- merge(nasdaq_data, dow_data, all = TRUE)
