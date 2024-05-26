@@ -13,6 +13,7 @@ library(ggcorrplot)
 
 # Function to handle missing values
 handle_missing_values <- function(data) {
+  # Fill NA using linear interpolation, forward fill, and backward fill
   data <- na.approx(data, maxgap = Inf, na.rm = FALSE)  # Linear interpolation
   data <- na.locf(data, fromLast = FALSE)  # Forward fill remaining NAs
   data <- na.locf(data, fromLast = TRUE)  # Backward fill remaining NAs
@@ -318,7 +319,7 @@ calculate_seasonal_returns <- function(data) {
   list(monthly = monthly_df, quarterly = quarterly_df)
 }
 
-# Function to create and save professional seasonal plots with enhanced descriptions
+# Function to create and save seasonal plots
 create_seasonal_plots <- function(seasonal_data, filename_prefix, index_name) {
   # High-quality theme for plots
   professional_theme <- theme_minimal(base_size = 15) +
