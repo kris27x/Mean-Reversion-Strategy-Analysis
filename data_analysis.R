@@ -1,15 +1,10 @@
 # data_analysis.R
 
 # Load necessary libraries
-library(quantmod)
-library(dplyr)
-library(ggplot2)
-library(lubridate)
-library(tidyr)
-library(TTR)
-library(PerformanceAnalytics)
-library(reshape2)
-library(ggcorrplot)
+required_packages <- c("quantmod", "dplyr", "ggplot2", "lubridate", "tidyr", "TTR", "PerformanceAnalytics", "reshape2", "ggcorrplot")
+new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
+lapply(required_packages, library, character.only = TRUE)
 
 # Function to handle missing values
 handle_missing_values <- function(data) {
