@@ -1,16 +1,23 @@
 # Load necessary libraries
-library(shiny)
-library(PerformanceAnalytics)
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(quantmod)
-library(plotly)
-library(dygraphs)
-library(RColorBrewer)
+required_packages <- c("shiny", "PerformanceAnalytics", "ggplot2", "dplyr", "tidyr", "quantmod", "plotly", "dygraphs", "RColorBrewer")
+
+# Function to install and load required packages
+install_and_load <- function(packages) {
+  for (pkg in packages) {
+    if (!require(pkg, character.only = TRUE)) {
+      install.packages(pkg, dependencies = TRUE)
+      library(pkg, character.only = TRUE)
+    }
+  }
+}
+
+install_and_load(required_packages)
 
 # Function to calculate and plot drawdowns using plotly
 plot_drawdowns <- function(nasdaq_data, dow_data) {
+  # Validate input
+  stopifnot(is.xts(nasdaq_data), is.xts(dow_data))
+  
   # Calculate daily returns
   nasdaq_returns <- dailyReturn(nasdaq_data)
   dow_returns <- dailyReturn(dow_data)
@@ -45,37 +52,55 @@ plot_drawdowns <- function(nasdaq_data, dow_data) {
            plot_bgcolor = 'white',
            paper_bgcolor = 'white')
   
-  p
+  return(p)
 }
 
 # Function to handle missing values
 handle_missing_values <- function(data) {
+  # Validate input
+  stopifnot(is.xts(data))
+  
+  # Linear interpolation and forward/backward fill
   data <- na.approx(data, maxgap = Inf, na.rm = FALSE)  # Linear interpolation
   data <- na.locf(data, fromLast = FALSE)  # Forward fill remaining NAs
   data <- na.locf(data, fromLast = TRUE)  # Backward fill remaining NAs
-  na.omit(data)  # Remove any remaining NAs
+  data <- na.omit(data)  # Remove any remaining NAs
+  
+  return(data)
 }
 
 # Function to download and handle data
 get_data <- function(symbol) {
+  # Validate input
+  stopifnot(is.character(symbol))
+  
+  # Attempt to download data, handle errors
   tryCatch({
     data <- getSymbols(symbol, src = "yahoo", from = "2000-01-01", auto.assign = FALSE)
-    adjusted_data <- data[, 6]  # Use adjusted close price for accurate calculations
+    adjusted_data <- Cl(data)  # Use adjusted close price for accurate calculations
     adjusted_data <- handle_missing_values(adjusted_data)
     return(adjusted_data)
   }, error = function(e) {
-    stop(paste("Error downloading data for symbol:", symbol))
+    stop(paste("Error downloading data for symbol:", symbol, ":", e$message))
   })
 }
 
 # Function to calculate rolling Sharpe ratio
 calculate_rolling_sharpe <- function(returns, window) {
+  # Validate input
+  stopifnot(is.xts(returns), is.numeric(window))
+  
+  # Calculate Sharpe ratio
   sharpe_ratio <- rollapply(returns, width = window, FUN = function(x) mean(x) / sd(x) * sqrt(252), by.column = FALSE, fill = NA)
+  
   return(sharpe_ratio)
 }
 
 # Function to plot rolling Sharpe ratio
 plot_rolling_sharpe <- function(nasdaq_sharpe, dow_sharpe) {
+  # Validate input
+  stopifnot(is.xts(nasdaq_sharpe), is.xts(dow_sharpe))
+  
   # Create a data frame for plotting
   sharpe_data <- data.frame(
     date = index(nasdaq_sharpe),
@@ -98,6 +123,9 @@ plot_rolling_sharpe <- function(nasdaq_sharpe, dow_sharpe) {
 
 # Function to plot Volatility (VIX) vs. Market Indices (Nasdaq and Dow Jones) interactively
 plot_volatility_vs_indices_interactive <- function(vix_data, nasdaq_data, djia_data) {
+  # Validate input
+  stopifnot(is.xts(vix_data), is.xts(nasdaq_data), is.xts(djia_data))
+  
   # Convert xts objects to data frames
   vix_df <- data.frame(date = index(vix_data), coredata(vix_data))
   nasdaq_df <- data.frame(date = index(nasdaq_data), coredata(nasdaq_data))
