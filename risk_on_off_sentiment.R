@@ -330,6 +330,28 @@ create_boxplot <- function(data, title) {
           legend.background = element_rect(fill = "white"))
 }
 
+# Function to visualize performance summary
+visualize_performance_summary <- function(performance_summary, title) {
+  # Reshape data for easier plotting
+  performance_summary_long <- performance_summary %>%
+    pivot_longer(cols = c(Mean_Return, Median_Return, Std_Dev_Return), 
+                 names_to = "Metric", values_to = "Value")
+  
+  # Create bar plot for performance summary
+  p <- ggplot(performance_summary_long, aes(x = Sentiment_Zone, y = Value, fill = Metric)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    facet_wrap(~ Metric, scales = "free_y") +
+    labs(title = title, x = "Sentiment Zone", y = "Value", fill = "Metric") +
+    theme_minimal(base_size = 15) +
+    theme(plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+          plot.background = element_rect(fill = "white"),
+          panel.background = element_rect(fill = "white"),
+          legend.background = element_rect(fill = "white"),
+          legend.position = "top")
+  
+  return(p)
+}
+
 # Main script execution
 main <- function() {
   # Main function to execute the entire analysis workflow
@@ -423,6 +445,16 @@ main <- function() {
   
   cat("Performance Summary for Dow Jones:\n")
   print_performance_summary(djia_performance_summary)
+  
+  # Visualize the performance summary for Nasdaq
+  p_nasdaq_summary <- visualize_performance_summary(nasdaq_performance_summary, "Performance Summary for Nasdaq")
+  print(p_nasdaq_summary)
+  ggsave("nasdaq_performance_summary.png", plot = p_nasdaq_summary, width = 10, height = 8)
+  
+  # Visualize the performance summary for Dow Jones
+  p_djia_summary <- visualize_performance_summary(djia_performance_summary, "Performance Summary for Dow Jones")
+  print(p_djia_summary)
+  ggsave("djia_performance_summary.png", plot = p_djia_summary, width = 10, height = 8)
   
   # Save the environment for later use
   save.image(file = "performance_analysis_based_on_sentiment.RData")
