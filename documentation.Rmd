@@ -1,10 +1,13 @@
 ---
-title: "Hedged Mean Reversion Strategy - Nasdaq & Dow Jones Correlation - Historical Market Data Analysis (R)"
+title: "Hedged Mean Reversion Strategy - Nasdaq & Dow Jones Correlation - Historical
+  Market Data Analysis (R)"
 author: "Krzysztof Strzelec"
 date: "`r Sys.Date()`"
 output:
   word_document: default
   pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 # Quantitative Trading Analysis Documentation
@@ -697,6 +700,46 @@ This bar plot summarizes the **average** and **median returns** for the Nasdaq C
     -   Incorporate sentiment analysis into the timing of trades.
     -   Monitor rolling correlations and VIX trends to anticipate changes in sentiment zones.
     -   Use boxplot and bar chart insights to refine expectations for return variability and optimize hedge ratios dynamically.
+
+### Interactive Visualizations of Nasdaq and Dow Jones Analysis
+
+#### Volatility (VIX) vs. Market Indices (Nasdaq and Dow Jones)
+
+![Volatility vs. Market Indices](image1.png)
+
+This Shiny App interactive visualization showcases the relationship between the Volatility Index (VIX) and the Nasdaq and Dow Jones closing prices. The VIX (blue line) represents market volatility scaled for visualization, while the Nasdaq (red line) and Dow Jones (green line) lines represent the scaled index values.
+
+Key Insights: - **Volatility Cycles:** The chart highlights the periods of high and low volatility, particularly during financial crises, economic downturns, or significant geopolitical events. - **Market Reaction to Volatility:** The relationship between market indices and volatility is evident. For instance, spikes in VIX typically coincide with drops in both indices, signaling heightened uncertainty. - **Hedged Strategy Implications:** During high-volatility periods, the hedged mean reversion strategy may be tested more rigorously as both indices are more prone to diverging movements. Volatility impacts both returns and risk assessments.
+
+------------------------------------------------------------------------
+
+#### Rolling Sharpe Ratio Over Time
+
+![Rolling Sharpe Ratio](image2.png)
+
+This visualization represents the rolling Sharpe Ratio for both Nasdaq (blue) and Dow Jones (red) over time, which measures the risk-adjusted return of each index.
+
+Key Insights: - **Performance Trends:** Peaks and troughs in the Sharpe Ratio indicate periods of superior and inferior risk-adjusted returns for each index. - **Interplay Between Indices:** The alternating patterns highlight the varying performance dynamics between the two indices, which could be exploited in the hedged mean reversion strategy. - **Strategic Utility:** Periods of significant divergence in risk-adjusted performance may offer opportunities to fine-tune the hedged strategy by adjusting position weights or entry thresholds.
+
+------------------------------------------------------------------------
+
+#### Relative Performance of Nasdaq vs. Dow Jones
+
+![Relative Performance](image3.png)
+
+This visualization tracks the relative performance ratio of Nasdaq to Dow Jones over time. A rising line indicates Nasdaq outperforming Dow Jones, while a declining line shows the opposite.
+
+Key Insights: - **Long-Term Trends:** Over the last two decades, Nasdaq has generally outperformed Dow Jones, particularly post-2010, driven by the tech boom and innovation in growth sectors. - **Periods of Reversion:** The chart captures cycles of underperformance and outperformance, essential for identifying mean-reverting opportunities within the strategy. - **Hedged Strategy Context:** Monitoring the relative performance ratio aids in determining extreme deviations from the mean, ideal entry points for executing the hedged positions.
+
+------------------------------------------------------------------------
+
+#### Drawdowns of Nasdaq and Dow Jones
+
+![Drawdowns](image4.png)
+
+This visualization highlights the drawdowns of Nasdaq (blue) and Dow Jones (red), showing the percentage decline from the previous peak for each index over time.
+
+Key Insights: - **Drawdown Analysis:** The magnitude and duration of drawdowns reflect market risk and resilience. Nasdaq exhibits more severe drawdowns due to its growth-oriented nature. - **Crisis Periods:** Drawdowns during events like the 2008 financial crisis and the COVID-19 pandemic are clearly visible, providing context for stress-testing strategies. - **Strategic Application:** Understanding drawdown dynamics allows for better calibration of the hedged strategy to manage periods of high market stress, ensuring portfolio stability.
 
 ### General Correlation
 
